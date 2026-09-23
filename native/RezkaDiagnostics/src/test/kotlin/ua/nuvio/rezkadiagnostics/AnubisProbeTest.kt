@@ -15,6 +15,24 @@ class AnubisProbeTest {
     private fun accepted() = MockResponse().setResponseCode(302).addHeader("Location", "/")
         .addHeader("Set-Cookie", "techaro.lol-anubis-auth=synthetic-auth; Path=/; HttpOnly")
 
+    @Test fun parsesChallengeAndJsonStringPrefix() {
+        val html = challenge + """<script id="anubis_base_prefix" type="application/json">"/proxy"</script>"""
+        val parsed = AnubisPow.parse(html)
+        assertEquals("synthetic-id", parsed.id)
+        assertEquals("synthetic-seed", parsed.seed)
+        assertEquals(1, parsed.difficulty)
+        assertEquals("/proxy", parsed.prefix)
+        assertEquals("", AnubisPow.parse(challenge).prefix)
+    }
+
+    @Test fun rejectsNonStringPrefix() {
+        val html = challenge + """<script id="anubis_base_prefix" type="application/json">123</script>"""
+        try {
+            AnubisPow.parse(html)
+            fail("Expected invalid prefix")
+        } catch (_: IllegalArgumentException) { }
+    }
+
     @Test fun completesChallengeWithCookieFrom302AndSameUserAgent() {
         MockWebServer().use { server ->
             server.enqueue(initial())
