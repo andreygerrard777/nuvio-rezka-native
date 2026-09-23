@@ -32,6 +32,8 @@ internal class SessionCookies : CookieJar {
 
 internal data class ProbeResult(val status: Int, val challenge: Boolean, val hasSetCookie: Boolean)
 
+internal data class Page(val status: Int, val body: String, val location: String?)
+
 internal class NativeHttp {
     val cookies = SessionCookies()
     val client: OkHttpClient = OkHttpClient.Builder()
@@ -42,6 +44,18 @@ internal class NativeHttp {
         .readTimeout(8, TimeUnit.SECONDS)
         .callTimeout(10, TimeUnit.SECONDS)
         .build()
+
+    fun page(url: String, timeoutMs: Long): Page {
+        val request = Request.Builder().url(url)
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36")
+            .header("Accept-Language", "ru-RU,ru;q=0.9,uk;q=0.8,en;q=0.7")
+            .header("Referer", "https://rezka.ag/")
+            .build()
+        return client.newBuilder().callTimeout(timeoutMs, TimeUnit.MILLISECONDS).build()
+            .newCall(request).execute().use { response ->
+                Page(response.code, response.peekBody(256L * 1024).string(), response.header("Location"))
+            }
+    }
 
     fun probe(url: String): ProbeResult {
         val request = Request.Builder().url(url)
