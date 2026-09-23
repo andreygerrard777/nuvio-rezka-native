@@ -39,7 +39,7 @@ subprojects {
     dependencies {
         add("cloudstream", rootProject.libs.cloudstream3)
         add("implementation", kotlin("stdlib"))
-        add("implementation", rootProject.libs.nicehttp)
+        // NativeHttp uses OkHttp directly; NiceHttp would pull OkHttp 5 into the 4.12 test runtime.
         add("implementation", rootProject.libs.kotlinx.coroutines.core)
         add("implementation", rootProject.libs.jsoup)
         // Nuvio already supplies OkHttp. Do not bundle duplicate runtime classes in DEX.
