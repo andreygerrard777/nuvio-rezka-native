@@ -93,8 +93,8 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
         try {
             val target = url.toHttpUrl()
             val initial = pageFollowingRedirects(target)
-            if (initial.status !in 200..299) return "REZKA_V3 initial=" + initial.status + " result=HTTP_ERROR"
-            if (!gate(initial)) return "REZKA_V3 initial=" + initial.status + " gate=0 site=" + site(initial) + " result=NO_CHALLENGE"
+            if (initial.status !in 200..299) return "REZKA_V4 initial=" + initial.status + " result=HTTP_ERROR"
+            if (!gate(initial)) return "REZKA_V4 initial=" + initial.status + " gate=0 site=" + site(initial) + " result=NO_CHALLENGE"
             stage = "parse"
             val challenge = AnubisPow.parse(initial.body)
             stage = "solve"
@@ -113,7 +113,7 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
             val auth = http.cookies.loadForRequest(target).any {
                 it.name == "techaro.lol-anubis-auth" && it.value.isNotEmpty()
             }
-            if (passed.status !in 200..399) return "REZKA_V3 pass=" + passed.status + " auth=" + auth + " result=PASS_REJECTED"
+            if (passed.status !in 200..399) return "REZKA_V4 pass=" + passed.status + " auth=" + auth + " result=PASS_REJECTED"
             stage = "verify"
             // Re-fetch the original page, not an arbitrary server-supplied pass redirect.
             val verified = pageFollowingRedirects(target)
@@ -125,15 +125,17 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
                 isSite -> "OK"
                 else -> "UNKNOWN_PAGE"
             }
-            return "REZKA_V3 pass=" + passed.status + " auth=" + auth + " verify=" + verified.status +
+            return "REZKA_V4 pass=" + passed.status + " auth=" + auth + " verify=" + verified.status +
                 " gate=" + stillGate + " site=" + isSite + " result=" + result
         } catch (e: java.util.concurrent.CancellationException) {
             throw e
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw e
+        } catch (e: LinkageError) {
+            return linkageReport(stage, e)
         } catch (e: Exception) {
-            return "REZKA_V3 stage=" + stage + " error=" + e.javaClass.simpleName
+            return "REZKA_V4 stage=" + stage + " error=" + e.javaClass.simpleName
         }
     }
 }
