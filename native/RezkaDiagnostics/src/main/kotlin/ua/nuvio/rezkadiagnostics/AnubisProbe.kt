@@ -1,6 +1,7 @@
 package ua.nuvio.rezkadiagnostics
 
-import com.google.gson.JsonParser
+import org.json.JSONObject
+import org.json.JSONArray
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.jsoup.Jsoup
@@ -13,17 +14,21 @@ internal object AnubisPow {
     fun parse(html: String): Challenge {
         val doc = Jsoup.parse(html)
         val raw = doc.getElementById("anubis_challenge")?.data() ?: error("missing challenge")
-        val root = JsonParser.parseString(raw).asJsonObject
-        val rules = root.getAsJsonObject("rules")
-        require(rules.get("algorithm").asString in setOf("fast", "slow"))
-        val difficulty = rules.get("difficulty").asString
+        val root = JSONObject(raw)
+        val rules = root.getJSONObject("rules")
+        require(rules.getString("algorithm") in setOf("fast", "slow"))
+        val difficulty = rules.get("difficulty").toString()
         require(difficulty.matches(Regex("[0-4]")))
-        val challenge = root.getAsJsonObject("challenge")
-        val id = challenge.get("id").asString
-        val seed = challenge.get("randomData").asString
+        val challenge = root.getJSONObject("challenge")
+        val id = challenge.getString("id")
+        val seed = challenge.getString("randomData")
         require(id.length in 1..1024 && seed.length in 1..4096)
         val prefix = doc.getElementById("anubis_base_prefix")?.data()
-            ?.let { JsonParser.parseString(it).asString } ?: ""
+            ?.let {
+                val value = JSONArray("[" + it + "]")
+                require(value.length() == 1 && value.get(0) is String)
+                value.getString(0)
+            } ?: ""
         require(prefix.isEmpty() || (prefix.startsWith("/") && !prefix.startsWith("//") &&
             !prefix.contains("..") && !prefix.contains('?') && !prefix.contains('#') &&
             !prefix.contains('\\')))
@@ -93,8 +98,8 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
         try {
             val target = url.toHttpUrl()
             val initial = pageFollowingRedirects(target)
-            if (initial.status !in 200..299) return "REZKA_V4 initial=" + initial.status + " result=HTTP_ERROR"
-            if (!gate(initial)) return "REZKA_V4 initial=" + initial.status + " gate=0 site=" + site(initial) + " result=NO_CHALLENGE"
+            if (initial.status !in 200..299) return "REZKA_V5 initial=" + initial.status + " result=HTTP_ERROR"
+            if (!gate(initial)) return "REZKA_V5 initial=" + initial.status + " gate=0 site=" + site(initial) + " result=NO_CHALLENGE"
             stage = "parse"
             val challenge = AnubisPow.parse(initial.body)
             stage = "solve"
@@ -113,7 +118,7 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
             val auth = http.cookies.loadForRequest(target).any {
                 it.name == "techaro.lol-anubis-auth" && it.value.isNotEmpty()
             }
-            if (passed.status !in 200..399) return "REZKA_V4 pass=" + passed.status + " auth=" + auth + " result=PASS_REJECTED"
+            if (passed.status !in 200..399) return "REZKA_V5 pass=" + passed.status + " auth=" + auth + " result=PASS_REJECTED"
             stage = "verify"
             // Re-fetch the original page, not an arbitrary server-supplied pass redirect.
             val verified = pageFollowingRedirects(target)
@@ -125,7 +130,7 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
                 isSite -> "OK"
                 else -> "UNKNOWN_PAGE"
             }
-            return "REZKA_V4 pass=" + passed.status + " auth=" + auth + " verify=" + verified.status +
+            return "REZKA_V5 pass=" + passed.status + " auth=" + auth + " verify=" + verified.status +
                 " gate=" + stillGate + " site=" + isSite + " result=" + result
         } catch (e: java.util.concurrent.CancellationException) {
             throw e
@@ -135,7 +140,7 @@ internal class AnubisProbe(private val http: NativeHttp = NativeHttp()) {
         } catch (e: LinkageError) {
             return linkageReport(stage, e)
         } catch (e: Exception) {
-            return "REZKA_V4 stage=" + stage + " error=" + e.javaClass.simpleName
+            return "REZKA_V5 stage=" + stage + " error=" + e.javaClass.simpleName
         }
     }
 }
