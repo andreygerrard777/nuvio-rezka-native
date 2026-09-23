@@ -35,7 +35,7 @@ class RezkaHttpProbe : MainAPI() {
             Thread.currentThread().interrupt()
             throw e
         } catch (e: Exception) {
-            "REZKA_V4 stage=init error=" + e.javaClass.simpleName
+            "REZKA_V5 stage=init error=" + e.javaClass.simpleName
         }
         throw IllegalStateException(report)
     }
@@ -45,6 +45,6 @@ class RezkaHttpProbe : MainAPI() {
 internal fun linkageReport(stage: String, error: LinkageError): String {
     val detail = (error.message ?: error.cause?.javaClass?.simpleName ?: "")
         .replace(Regex("[^A-Za-z0-9_.$/;:() -]"), "?")
-    return ("REZKA_V4 stage=" + stage + " error=" + error.javaClass.simpleName +
+    return ("REZKA_V5 stage=" + stage + " error=" + error.javaClass.simpleName +
         " detail=" + detail).take(120)
 }
