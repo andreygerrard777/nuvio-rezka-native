@@ -27,7 +27,7 @@ class PackagingTests(unittest.TestCase):
             plugin = json.loads((out / "plugins.json").read_text(encoding="utf-8"))[0]
             self.assertEqual(repo["manifestVersion"], 1)
             self.assertEqual(repo["pluginLists"], ["https://github.com/example/test/releases/download/native-probe-1/plugins.json"])
-            self.assertEqual(plugin["version"], 4)
+            self.assertEqual(plugin["version"], 5)
             self.assertEqual(plugin["fileSize"], cs3.stat().st_size)
             self.assertTrue(plugin["fileHash"].startswith("sha256-"))
             self.assertEqual((out / "RezkaDiagnostics.cs3").read_bytes(), cs3.read_bytes())
