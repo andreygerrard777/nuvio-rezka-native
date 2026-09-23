@@ -25,6 +25,26 @@ class RezkaHttpProbe : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         // Intentionally expose a short sanitized report through Nuvio's Test diagnostics.
-        throw IllegalStateException(AnubisProbe().run(mainUrl + "/"))
+        val report = try {
+            AnubisProbe().run(mainUrl + "/")
+        } catch (e: LinkageError) {
+            linkageReport("init", e)
+        } catch (e: java.util.concurrent.CancellationException) {
+            throw e
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw e
+        } catch (e: Exception) {
+            "REZKA_V4 stage=init error=" + e.javaClass.simpleName
+        }
+        throw IllegalStateException(report)
     }
+}
+
+/** Linkage errors contain class/method signatures; keep the UI report bounded. */
+internal fun linkageReport(stage: String, error: LinkageError): String {
+    val detail = (error.message ?: error.cause?.javaClass?.simpleName ?: "")
+        .replace(Regex("[^A-Za-z0-9_.$/;:() -]"), "?")
+    return ("REZKA_V4 stage=" + stage + " error=" + error.javaClass.simpleName +
+        " detail=" + detail).take(120)
 }
