@@ -24,14 +24,7 @@ class RezkaHttpProbe : MainAPI() {
     override val supportedTypes = setOf(TvType.Movie, TvType.TvSeries)
 
     override suspend fun search(query: String): List<SearchResponse> {
-        // Fresh isolated session for each test. One passive GET; no challenge solving yet.
-        val report = try {
-            val r = NativeHttp().probe(mainUrl + "/")
-            "REZKA_HTTP v2 status=${r.status} anubis=${r.challenge} setCookie=${r.hasSetCookie} manualRedirect=true"
-        } catch (e: Exception) {
-            // Exception messages can contain URLs/tokens; report only the exception class.
-            "REZKA_HTTP_ERROR v2 ${e.javaClass.simpleName}"
-        }
-        throw IllegalStateException(report)
+        // Intentionally expose a short sanitized report through Nuvio's Test diagnostics.
+        throw IllegalStateException(AnubisProbe().run(mainUrl + "/"))
     }
 }
