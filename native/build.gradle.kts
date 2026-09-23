@@ -46,6 +46,8 @@ subprojects {
         add("compileOnly", "com.squareup.okhttp3:okhttp:4.12.0")
         add("testImplementation", "com.squareup.okhttp3:okhttp:4.12.0")
         add("testImplementation", "com.squareup.okhttp3:mockwebserver:4.12.0")
+        add("compileOnly", "com.google.code.gson:gson:2.13.2")
+        add("testImplementation", "com.google.code.gson:gson:2.13.2")
         add("testImplementation", rootProject.libs.junit)
     }
 }
