@@ -1,5 +1,6 @@
 package ua.nuvio.rezkadiagnostics
 
+import okhttp3.FormBody
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -45,16 +46,33 @@ internal class NativeHttp {
         .callTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    fun page(url: String, timeoutMs: Long): Page {
-        val request = Request.Builder().url(url)
-            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36")
+    fun page(url: String, timeoutMs: Long): Page = request(url, timeoutMs)
+
+    fun request(
+        url: String, timeoutMs: Long, fields: Map<String, String>? = null,
+        referer: String = "https://rezka.ag/"
+    ): Page {
+        val builder = Request.Builder().url(url)
+            .header("User-Agent", USER_AGENT)
             .header("Accept-Language", "ru-RU,ru;q=0.9,uk;q=0.8,en;q=0.7")
-            .header("Referer", "https://rezka.ag/")
-            .build()
+            .header("Referer", referer)
+        if (fields != null) {
+            val form = FormBody.Builder()
+            fields.forEach { (key, value) -> form.add(key, value) }
+            builder.post(form.build())
+                .header("Origin", referer.trimEnd('/'))
+                .header("X-Requested-With", "XMLHttpRequest")
+        }
         return client.newBuilder().callTimeout(timeoutMs, TimeUnit.MILLISECONDS).build()
-            .newCall(request).execute().use { response ->
-                Page(response.code, response.peekBody(256L * 1024).string(), response.header("Location"))
+            .newCall(builder.build()).execute().use { response ->
+                val body = response.peekBody(1024L * 1024 + 1)
+                check(body.contentLength() <= 1024L * 1024) { "REZKA_V6 stage=http result=BODY_TOO_LARGE" }
+                Page(response.code, body.string(), response.header("Location"))
             }
+    }
+
+    companion object {
+        const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
     }
 
     fun probe(url: String): ProbeResult {
