@@ -1,9 +1,9 @@
-version = 5
+version = 6
 
 cloudstream {
     language = "uk"
-    description = "Діагностика запуску .cs3 та HTTP Rezka у Nuvio. Відеопотоків немає."
+    description = "Нативний прототип для фільмів: сесія, пошук та перше доступне озвучення."
     authors = listOf("nuvio-uk-providers")
     status = 3
-    tvTypes = listOf("Movie", "TvSeries")
+    tvTypes = listOf("Movie")
 }
