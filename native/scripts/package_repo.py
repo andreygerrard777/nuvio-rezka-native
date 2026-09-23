@@ -33,10 +33,10 @@ def package(cs3: Path, repository: str, tag: str, output: Path):
     base = f"https://github.com/{repository}/releases/download/{tag}"
     plugins = [{
         "name": "Rezka Diagnostics", "internalName": "RezkaDiagnostics",
-        "url": f"{base}/{filename}", "version": 5, "apiVersion": 1,
+        "url": f"{base}/{filename}", "version": 6, "apiVersion": 1,
         "status": 3, "language": "uk", "authors": ["nuvio-uk-providers"],
-        "description": "Діагностика .cs3 та HTTP. Відеопотоків немає.",
-        "tvTypes": ["Movie", "TvSeries"], "repositoryUrl": f"https://github.com/{repository}",
+        "description": "Нативний прототип для фільмів; перше доступне озвучення.",
+        "tvTypes": ["Movie"], "repositoryUrl": f"https://github.com/{repository}",
         "fileSize": len(data), "fileHash": "sha256-" + hashlib.sha256(data).hexdigest(),
     }]
     repo = {
